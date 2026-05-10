@@ -1,0 +1,146 @@
+name: kafka-kraft-3node
+services:
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka-ui
+    restart: always
+    ports:
+      - "8888:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+      - KAFKA_CLUSTERS_0_NAME=kraft-dev 
+    networks:
+      - kafka-network
+
+  kafka-1:
+    image: confluentinc/cp-kafka:8.2.0
+    container_name: kafka-1
+    restart: always
+    ports:
+      - "19092:19092"
+    volumes:
+      - kafka1_data:/var/lib/kafka/data
+    environment:
+      CLUSTER_ID: q1Sh-9_ISia_zwGINzRvyQ
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:19092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092,PLAINTEXT_HOST://localhost:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "2"
+      KAFKA_MIN_INSYNC_REPLICAS: "2"
+      KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
+    networks:
+      - kafka-network
+
+  kafka-2:
+    image: confluentinc/cp-kafka:8.2.0
+    container_name: kafka-2
+    restart: always
+    ports:
+      - "19093:19093"
+    volumes:
+      - kafka2_data:/var/lib/kafka/data
+    environment:
+      CLUSTER_ID: q1Sh-9_ISia_zwGINzRvyQ
+      # id узла - должен быть уникальным (для корректности обращений по нему)
+      KAFKA_NODE_ID: 2
+      # роли этого узла
+      KAFKA_PROCESS_ROLES: broker,controller
+      # кворум контроллеров (для управления кластером)
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      # этот listener используется для controller quorum
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      # что и на каких портах Kafka слушает (9092 - осн порт для работ; 19093 - для доступа снаружи докера; 9093 - внутренний для контроллера)
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:19093,CONTROLLER://0.0.0.0:9093
+      # сообщает как к ней обращаться в докер сети и снаружи
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092,PLAINTEXT_HOST://localhost:19093
+      # взаимодействие со всеми портами на которых слушает кафка - без шифрования
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      # какой listener использовать для общения между брокерами
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      # осн данные кафки
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      # 1 лидер и 2 реплики
+      KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
+      # оффсетыы так же реплицируются чтобы консьюмеры после падаения точно знали откуда начать читасть
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+      # репликация внутренних транзакций кафка
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "2"
+      # если менее 2 брокеров синхронизированы, то запись в топик будет отклоняться
+      KAFKA_MIN_INSYNC_REPLICAS: "2"
+      # несинхронизирвоанная реплика не может стать лидером
+      KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
+    networks:
+      - kafka-network
+
+  kafka-3:
+    image: confluentinc/cp-kafka:8.2.0
+    container_name: kafka-3
+    restart: always
+    ports:
+      - "19094:19094"
+    volumes:
+      - kafka3_data:/var/lib/kafka/data
+    environment:
+      CLUSTER_ID: q1Sh-9_ISia_zwGINzRvyQ
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:19094,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092,PLAINTEXT_HOST://localhost:19094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "2"
+      KAFKA_MIN_INSYNC_REPLICAS: "2"
+      KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
+    networks:
+      - kafka-network
+
+  kafka-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    deploy:
+      replicas: 2
+    restart: always
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      KAFKA_TOPIC: my-topic
+      KAFKA_SINGLE_CONSUMER_GROUP_ID: single-message-consumer-group
+      KAFKA_BATCH_CONSUMER_GROUP_ID: batch-message-consumer-group
+      KAFKA_PRODUCER_FIXED_DELAY_MS: 500
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    networks:
+      - kafka-network
+
+networks:
+  kafka-network:
+    driver: bridge
+
+volumes:
+  kafka1_data:
+  kafka2_data:
+  kafka3_data:

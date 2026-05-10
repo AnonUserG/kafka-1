@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: kafka-1
+  main:
+    web-application-type: none
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092,localhost:19093,localhost:19094}
+    consumer:
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.practikum.kafka_1.model
+        spring.json.value.default.type: com.practikum.kafka_1.model.Order
+    producer:
+      acks: all
+      retries: 10
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: true
+
+app:
+  kafka:
+    enabled: true
+    topic: ${KAFKA_TOPIC:my-topic}
+    single-consumer:
+      group-id: ${KAFKA_SINGLE_CONSUMER_GROUP_ID:single-message-consumer-group}
+      enable-auto-commit: true
+      max-poll-records: 1
+    batch-consumer:
+      group-id: ${KAFKA_BATCH_CONSUMER_GROUP_ID:batch-message-consumer-group}
+      enable-auto-commit: false
+      max-poll-records: 10
+      fetch-min-bytes: 1024
+      fetch-max-wait-ms: 5000
+    producer:
+      fixed-delay-ms: ${KAFKA_PRODUCER_FIXED_DELAY_MS:500}
+
+logging:
+  level:
+    root: INFO

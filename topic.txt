@@ -1,0 +1,16 @@
+Команда создания топика:
+
+docker exec -it kafka-1 kafka-topics --create --topic my-topic --partitions 3 --replication-factor 2 --bootstrap-server localhost:9092
+
+Команда просмотра подробной информации:
+
+docker exec -it kafka-1 kafka-topics --describe --topic my-topic --bootstrap-server localhost:9092
+
+Подробная информация о топике:
+
+- Topic: my-topic
+- Partitions: 3
+- Replication factor: 2
+- Auto-create topics: disabled in docker-compose.yml
+
+После выполнения `--describe` вставьте сюда реальные значения `Leader`, `Replicas` и `Isr`.
