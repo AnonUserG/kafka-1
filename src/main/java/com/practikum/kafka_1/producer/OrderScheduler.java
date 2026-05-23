@@ -31,8 +31,14 @@ public class OrderScheduler {
 		log.info("Sending order to Kafka: {}", order);
 
 		try {
-			orderKafkaTemplate.send(topic, id.toString(), order);
-			log.info("Order {} sent to Kafka topic {}", id, topic);
+			orderKafkaTemplate.send(topic, id.toString(), order)
+					.whenComplete((result, ex) -> {
+						if (ex != null) {
+							log.error("Failed to send order {} to topic {}: {}", id, topic, ex.getMessage(), ex);
+						} else {
+							log.info("Order {} sent to Kafka topic {}", id, topic);
+						}
+					});
 		}
 		catch (Exception exception) {
 			log.error("Unexpected error while sending order {}: {}", id, exception.getMessage(), exception);

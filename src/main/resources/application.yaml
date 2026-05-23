@@ -8,9 +8,11 @@ spring:
     consumer:
       auto-offset-reset: earliest
       enable-auto-commit: false
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       properties:
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
         spring.json.trusted.packages: com.practikum.kafka_1.model
         spring.json.value.default.type: com.practikum.kafka_1.model.Order
     producer:
@@ -28,7 +30,6 @@ app:
     topic: ${KAFKA_TOPIC:my-topic}
     single-consumer:
       group-id: ${KAFKA_SINGLE_CONSUMER_GROUP_ID:single-message-consumer-group}
-      enable-auto-commit: true
       max-poll-records: 1
     batch-consumer:
       group-id: ${KAFKA_BATCH_CONSUMER_GROUP_ID:batch-message-consumer-group}

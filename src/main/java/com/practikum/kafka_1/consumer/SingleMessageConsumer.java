@@ -15,7 +15,6 @@ public class SingleMessageConsumer {
 			topics = "${app.kafka.topic:my-topic}",
 			groupId = "${app.kafka.single-consumer.group-id:single-message-consumer-group}",
 			properties = {
-					"enable.auto.commit=${app.kafka.single-consumer.enable-auto-commit:true}",
 					"max.poll.records=${app.kafka.single-consumer.max-poll-records:1}"
 			}
 	)
