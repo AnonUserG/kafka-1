@@ -10,29 +10,29 @@ services:
       - "9092:19092"
       - "9991:9991"
     environment:
-      CLUSTER_ID: q1Sh-9_ISia_zwGINzRvyQ
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:19092,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_LOG_DIRS: /var/lib/kafka/data
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
-      KAFKA_NUM_PARTITIONS: 3
-      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
-      KAFKA_MIN_INSYNC_REPLICAS: 2
-      KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
-      KAFKA_LOG_RETENTION_HOURS: 168
-      KAFKA_LOG_RETENTION_BYTES: -1
-      KAFKA_LOG_SEGMENT_BYTES: 1073741824
-      KAFKA_JMX_PORT: 9991
-      KAFKA_JMX_HOSTNAME: kafka-1
+      CLUSTER_ID: q1Sh-9_ISia_zwGINzRvyQ                                          # уникальный ID кластера KRaft (одинаков у всех узлов)
+      KAFKA_NODE_ID: 1                                                             # уникальный номер узла в кластере
+      KAFKA_PROCESS_ROLES: broker,controller                                       # узел совмещает роль брокера и контроллера (KRaft, без ZooKeeper)
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093 # список всех контроллеров для выборов лидера (кворум)
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:19092,CONTROLLER://0.0.0.0:9093 # адреса, на которых брокер принимает соединения
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092,PLAINTEXT_HOST://localhost:9092             # адреса, которые брокер публикует клиентам
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT # маппинг имён слушателей на протоколы безопасности
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER                                 # имя слушателя для KRaft-контроллера
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT                                 # слушатель для внутренней связи между брокерами
+      KAFKA_LOG_DIRS: /var/lib/kafka/data                                         # директория хранения данных (сегменты логов)
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"                                    # запрет автоматического создания топиков
+      KAFKA_NUM_PARTITIONS: 3                                                      # количество партиций для новых топиков по умолчанию
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3                                         # фактор репликации для новых топиков по умолчанию
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3                                   # репликация служебного топика __consumer_offsets
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3                           # репликация служебного топика транзакционного лога
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2                                      # минимум синхронных реплик для транзакционного лога
+      KAFKA_MIN_INSYNC_REPLICAS: 2                                                 # минимум реплик, подтвердивших запись (при acks=all)
+      KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"                               # запрет выбора лидера из отставших реплик (защита от потери данных)
+      KAFKA_LOG_RETENTION_HOURS: 168                                              # время хранения сегментов лога (168 ч = 7 дней)
+      KAFKA_LOG_RETENTION_BYTES: -1                                               # ограничение размера лога на партицию (-1 = без ограничений)
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824                                         # максимальный размер одного сегмента лога (1 ГБ)
+      KAFKA_JMX_PORT: 9991                                                        # порт JMX для сбора метрик (kafka-exporter, JMX Exporter)
+      KAFKA_JMX_HOSTNAME: kafka-1                                                 # хостнейм, который брокер регистрирует в JMX
     healthcheck:
       test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092" ]
       interval: 10s
@@ -132,9 +132,9 @@ services:
     ports:
       - "8081:8081"
     environment:
-      SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka-1:9092,PLAINTEXT://kafka-2:9092,PLAINTEXT://kafka-3:9092
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry                                                              # имя хоста сервиса (используется в заголовках ответов)
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081                                                         # адрес HTTP API для регистрации и получения схем
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka-1:9092,PLAINTEXT://kafka-2:9092,PLAINTEXT://kafka-3:9092 # брокеры Kafka для хранения схем в топике _schemas
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8081/subjects" ]
       interval: 10s
@@ -158,20 +158,20 @@ services:
     ports:
       - "8083:8083"
     environment:
-      CONNECT_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
-      CONNECT_REST_PORT: 8083
-      CONNECT_GROUP_ID: connect-cluster
-      CONNECT_REST_ADVERTISED_HOST_NAME: kafka-connect
-      CONNECT_CONFIG_STORAGE_TOPIC: connect-configs
-      CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
-      CONNECT_STATUS_STORAGE_TOPIC: connect-status
-      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 3
-      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 3
-      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 3
-      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
-      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
-      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components
+      CONNECT_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092           # брокеры Kafka для воркеров Connect
+      CONNECT_REST_PORT: 8083                                                      # порт REST API управления коннекторами
+      CONNECT_GROUP_ID: connect-cluster                                            # ID группы — объединяет воркеры в один кластер Connect
+      CONNECT_REST_ADVERTISED_HOST_NAME: kafka-connect                            # хостнейм, публикуемый другим воркерам для координации
+      CONNECT_CONFIG_STORAGE_TOPIC: connect-configs                               # топик Kafka для хранения конфигураций коннекторов
+      CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets                               # топик Kafka для хранения смещений коннекторов
+      CONNECT_STATUS_STORAGE_TOPIC: connect-status                                # топик Kafka для хранения статусов задач и коннекторов
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 3                                # репликация топика конфигураций
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 3                                # репликация топика смещений
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 3                                # репликация топика статусов
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter     # конвертер ключей сообщений (строка)
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter            # конвертер значений сообщений (Avro)
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081   # URL Schema Registry для сериализации/десериализации Avro
+      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components    # пути поиска jar-плагинов коннекторов
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8083/connectors" ]
       interval: 15s
@@ -198,13 +198,13 @@ services:
     ports:
       - "8088:8088"
     environment:
-      KSQL_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
-      KSQL_HOST_NAME: ksqldb-server
-      KSQL_LISTENERS: http://0.0.0.0:8088
-      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_REPLICATION_FACTOR: 3
-      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
-      KSQL_KSQL_STREAMS_REPLICATION_FACTOR: 3
+      KSQL_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092              # брокеры Kafka как источник/приёмник потоков
+      KSQL_HOST_NAME: ksqldb-server                                               # имя хоста сервиса
+      KSQL_LISTENERS: http://0.0.0.0:8088                                         # адрес REST API для выполнения KSQL-запросов
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081                 # URL Schema Registry для работы со схемами Avro в потоках
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_REPLICATION_FACTOR: 3                   # репликация топика внутренних логов обработки ksqlDB
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"                     # автосоздание топика логов обработки при старте
+      KSQL_KSQL_STREAMS_REPLICATION_FACTOR: 3                                    # репликация топиков, создаваемых потоками ksqlDB
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8088/healthcheck" ]
       interval: 15s
@@ -230,12 +230,12 @@ services:
     ports:
       - "8888:8080"
     environment:
-      KAFKA_CLUSTERS_0_NAME: production
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
-      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
-      KAFKA_CLUSTERS_0_KSQLDBSERVER: http://ksqldb-server:8088
-      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: connect
-      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka-connect:8083
+      KAFKA_CLUSTERS_0_NAME: production                                           # отображаемое название кластера в интерфейсе
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092  # брокеры Kafka для подключения UI
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081               # URL Schema Registry для отображения схем в UI
+      KAFKA_CLUSTERS_0_KSQLDBSERVER: http://ksqldb-server:8088                  # URL ksqlDB для выполнения запросов из UI
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: connect                              # отображаемое название коннектора в UI
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka-connect:8083         # URL Kafka Connect REST API
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
       interval: 15s
