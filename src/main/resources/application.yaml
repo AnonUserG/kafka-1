@@ -4,7 +4,13 @@ spring:
   main:
     web-application-type: none
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092,localhost:19093,localhost:19094}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    streams:
+      application-id: messaging-streams-app          # уникальный ID приложения Kafka Streams
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+      replication-factor: 1                          # для dev (1 брокер); для prod-кластера выставить 3
+      properties:
+        commit.interval.ms: 1000                     # как часто коммитить оффсеты стримов
     consumer:
       auto-offset-reset: earliest
       enable-auto-commit: false
@@ -26,7 +32,7 @@ spring:
 
 app:
   kafka:
-    enabled: true
+    enabled: false  # legacy producer/consumer отключены; активна только Kafka Streams топология
     topic: ${KAFKA_TOPIC:my-topic}
     single-consumer:
       group-id: ${KAFKA_SINGLE_CONSUMER_GROUP_ID:single-message-consumer-group}
