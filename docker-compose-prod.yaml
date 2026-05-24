@@ -236,6 +236,28 @@ services:
       KAFKA_CLUSTERS_0_KSQLDBSERVER: http://ksqldb-server:8088                  # URL ksqlDB для выполнения запросов из UI
       KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: connect                              # отображаемое название коннектора в UI
       KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka-connect:8083         # URL Kafka Connect REST API
+
+      # --- Keycloak OAuth2 ---
+      # AUTH_TYPE: OAUTH2                                                                          # включает OAuth2-аутентификацию вместо встроенной
+
+      # Keycloak → Clients → <твой клиент> → Settings
+      # AUTH_OAUTH2_CLIENT_KEYCLOAK_CLIENTID: KEYCLOAK_CLIENT_ID                                  # имя клиента в Keycloak (поле "Client ID")
+      # AUTH_OAUTH2_CLIENT_KEYCLOAK_CLIENTSECRET: KEYCLOAK_CLIENT_SECRET                         # секрет: Clients → <клиент> → Credentials → Client Secret
+      # AUTH_OAUTH2_CLIENT_KEYCLOAK_SCOPE: openid,profile,email                                  # запрашиваемые scope (openid обязателен)
+      # AUTH_OAUTH2_CLIENT_KEYCLOAK_CLIENT-NAME: keycloak                                        # отображаемое имя провайдера (не менять)
+      # AUTH_OAUTH2_CLIENT_KEYCLOAK_PROVIDER: keycloak                                           # тип провайдера (не менять)
+      # AUTH_OAUTH2_CLIENT_KEYCLOAK_REDIRECT-URI: "http://ТВОЙ_ХОСТ:8888/login/oauth2/code/keycloak" # должен совпадать с Valid Redirect URIs в Keycloak
+
+      # Keycloak → Realm Settings → Endpoints → OpenID Endpoint Configuration
+      # AUTH_OAUTH2_CLIENT_KEYCLOAK_ISSUER-URI: "http://KEYCLOAK_HOST/realms/ТВОЙ_REALM"         # URL realm'а — остальные эндпоинты OIDC подтянутся автоматически
+      # AUTH_OAUTH2_CLIENT_KEYCLOAK_USER-NAME-ATTRIBUTE: preferred_username                      # поле токена, используемое как имя пользователя в UI
+
+      # Опционально: выход (Single Logout)
+      # AUTH_OAUTH2_CLIENT_KEYCLOAK_CUSTOM-PARAMS_LOGOUT-URL: "http://KEYCLOAK_HOST/realms/ТВОЙ_REALM/protocol/openid-connect/logout"
+
+      # Опционально: RBAC через роли Keycloak
+      # AUTH_OAUTH2_CLIENT_KEYCLOAK_CUSTOM-PARAMS_TYPE: oauth                                    # нужен для маппинга ролей
+      # AUTH_OAUTH2_CLIENT_KEYCLOAK_CUSTOM-PARAMS_ROLES-FIELD: realm_roles                       # поле в токене с ролями (нужен кастомный mapper в Keycloak)
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
       interval: 15s
