@@ -8,7 +8,7 @@ spring:
     streams:
       application-id: messaging-streams-app          # уникальный ID приложения Kafka Streams
       bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-      replication-factor: 1                          # для dev (1 брокер); для prod-кластера выставить 3
+      replication-factor: ${KAFKA_REPLICATION_FACTOR:1} # 1 для одного брокера, 3 для кластера
       properties:
         commit.interval.ms: 1000                     # как часто коммитить оффсеты стримов
     consumer:

@@ -7,7 +7,8 @@ import org.apache.kafka.streams.processor.api.FixedKeyProcessor;
 import org.apache.kafka.streams.processor.api.FixedKeyProcessorContext;
 import org.apache.kafka.streams.processor.api.FixedKeyRecord;
 import org.apache.kafka.streams.state.KeyValueIterator;
-import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
+import org.apache.kafka.streams.state.TimestampedKeyValueStore;
+import org.apache.kafka.streams.state.ValueAndTimestamp;
 
 import java.util.regex.Pattern;
 
@@ -18,14 +19,15 @@ import java.util.regex.Pattern;
 public class CensorshipProcessor implements FixedKeyProcessor<String, ChatMessage, ChatMessage> {
 
     private FixedKeyProcessorContext<String, ChatMessage> context;
-    private ReadOnlyKeyValueStore<String, Boolean> bannedWordsStore;
+    // GlobalKTable использует RocksDBTimestampedStore — значения обёрнуты в ValueAndTimestamp<V>
+    private TimestampedKeyValueStore<String, String> bannedWordsStore;
 
     @Override
     @SuppressWarnings("unchecked")
     public void init(FixedKeyProcessorContext<String, ChatMessage> context) {
         this.context = context;
         // Глобальные сторы доступны из любого процессора без явного объявления зависимости
-        this.bannedWordsStore = (ReadOnlyKeyValueStore<String, Boolean>)
+        this.bannedWordsStore = (TimestampedKeyValueStore<String, String>)
                 context.getStateStore(MessagingTopology.BANNED_WORDS_STORE);
     }
 
@@ -50,16 +52,16 @@ public class CensorshipProcessor implements FixedKeyProcessor<String, ChatMessag
     }
 
     // Перебирает все запрещённые слова из стора и заменяет совпадения маской.
-    // Замена нечувствительна к регистру и учитывает границы слов.
+    // Замена нечувствительна к регистру и учитывает границы слов (?U для Юникода/кириллицы).
     private String maskBannedWords(String text) {
-        try (KeyValueIterator<String, Boolean> it = bannedWordsStore.all()) {
+        try (KeyValueIterator<String, ValueAndTimestamp<String>> it = bannedWordsStore.all()) {
             while (it.hasNext()) {
-                KeyValue<String, Boolean> entry = it.next();
-                if (Boolean.TRUE.equals(entry.value)) {
+                KeyValue<String, ValueAndTimestamp<String>> entry = it.next();
+                String value = entry.value != null ? entry.value.value() : null;
+                if ("true".equals(value)) {
                     String word = entry.key;
                     String mask = "*".repeat(word.length());
-                    // (?i) — без учёта регистра; \b — граница слова
-                    text = text.replaceAll("(?i)\\b" + Pattern.quote(word) + "\\b", mask);
+                    text = text.replaceAll("(?Ui)\\b" + Pattern.quote(word) + "\\b", mask);
                 }
             }
         }

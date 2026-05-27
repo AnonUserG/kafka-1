@@ -39,6 +39,12 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "2"
       KAFKA_MIN_INSYNC_REPLICAS: "2"
       KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
+    healthcheck:
+      test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
     networks:
       - kafka-network
 
@@ -83,6 +89,12 @@ services:
       KAFKA_MIN_INSYNC_REPLICAS: "2"
       # несинхронизирвоанная реплика не может стать лидером
       KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
+    healthcheck:
+      test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
     networks:
       - kafka-network
 
@@ -113,6 +125,12 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "2"
       KAFKA_MIN_INSYNC_REPLICAS: "2"
       KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
+    healthcheck:
+      test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
     networks:
       - kafka-network
 
@@ -129,10 +147,14 @@ services:
       KAFKA_SINGLE_CONSUMER_GROUP_ID: single-message-consumer-group
       KAFKA_BATCH_CONSUMER_GROUP_ID: batch-message-consumer-group
       KAFKA_PRODUCER_FIXED_DELAY_MS: 500
+      KAFKA_REPLICATION_FACTOR: 3
     depends_on:
-      - kafka-1
-      - kafka-2
-      - kafka-3
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
     networks:
       - kafka-network
 

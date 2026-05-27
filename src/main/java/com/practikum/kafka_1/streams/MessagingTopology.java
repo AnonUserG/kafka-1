@@ -41,26 +41,26 @@ public class MessagingTopology {
         // Ключ: "recipientId:senderId" → значение: true (заблокирован) / false.
         // Чтобы заблокировать: отправьте ключ="alice:bob", value=true.
         // Чтобы разблокировать: отправьте ключ="alice:bob", value=false (или tombstone).
-        GlobalKTable<String, Boolean> blockedUsersTable = builder.globalTable(
+        GlobalKTable<String, String> blockedUsersTable = builder.globalTable(
                 "blocked_users",
-                Consumed.with(Serdes.String(), Serdes.Boolean()),
-                Materialized.<String, Boolean, KeyValueStore<Bytes, byte[]>>as(BLOCKED_USERS_STORE)
+                Consumed.with(Serdes.String(), Serdes.String()),
+                Materialized.<String, String, KeyValueStore<Bytes, byte[]>>as(BLOCKED_USERS_STORE)
                         .withKeySerde(Serdes.String())
-                        .withValueSerde(Serdes.Boolean())
+                        .withValueSerde(Serdes.String())
         );
 
         // ── Персистентное хранилище запрещённых слов ──────────────────────────
-        // Ключ: слово в нижнем регистре → значение: true (запрещено) / false.
+        // Ключ: слово в нижнем регистре → значение: "true" (запрещено) / "false".
         // Список обновляется динамически: новые записи вступают в силу сразу,
         // без перезапуска приложения.
         // Возвращаемое значение не используется для join — стор нужен
         // CensorshipProcessor, который получает его через context.getStateStore().
         builder.globalTable(
                 "banned_words",
-                Consumed.with(Serdes.String(), Serdes.Boolean()),
-                Materialized.<String, Boolean, KeyValueStore<Bytes, byte[]>>as(BANNED_WORDS_STORE)
+                Consumed.with(Serdes.String(), Serdes.String()),
+                Materialized.<String, String, KeyValueStore<Bytes, byte[]>>as(BANNED_WORDS_STORE)
                         .withKeySerde(Serdes.String())
-                        .withValueSerde(Serdes.Boolean())
+                        .withValueSerde(Serdes.String())
         );
 
         // ── Поток входящих сообщений ──────────────────────────────────────────
@@ -78,7 +78,7 @@ public class MessagingTopology {
                 .leftJoin(
                         blockedUsersTable,
                         (msgKey, msg) -> msg.recipientId() + ":" + msg.senderId(),
-                        (msg, isBlocked) -> Boolean.TRUE.equals(isBlocked) ? null : msg
+                        (msg, isBlocked) -> "true".equals(isBlocked) ? null : msg
                 )
                 // Убираем tombstone-записи (сообщения от заблокированных пользователей)
                 .filter((key, msg) -> msg != null)
